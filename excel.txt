@@ -1,0 +1,178 @@
+-----------------------------------------program.cs--------------------------------
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
+builder.Services.AddControllersWithViews();
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Home/Error");
+}
+app.UseStaticFiles();
+
+app.UseRouting();
+
+app.UseAuthorization();
+
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=model}/{action=Index}/{id?}");
+
+app.Run();
+-----------------------------------------layout.cshtml--------------------------------
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - WebApplication9</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/WebApplication9.styles.css" asp-append-version="true" />
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container-fluid">
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">WebApplication9</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="model" asp-action="Index">View Excel</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; 2022 - WebApplication9 - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+        </div>
+    </footer>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
+
+-----------------------------------------Index.cshtml--------------------------------
+@using WebApplication9.Models;
+@model IEnumerable<model>
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Users</title>
+</head>
+<body>
+    @using (Html.BeginForm(null,null,FormMethod.Post))
+    {
+      <input type="submit" value="view Excel" />
+    }
+    @if (Model.Count() > 0)
+    {
+        <hr />
+        <table cellpadding="0" cellspacing="0" border="1">
+            <tr>
+                <th>Id</th>
+                <th>Region</th>
+                <th>Rep</th>
+                <th>Item</th>
+                <th>Unit</th>
+
+            </tr>
+            @foreach (model user in Model)
+            {
+                <tr>
+                    <td>@user.Id</td>
+                    <td>@user.Region</td>
+                    <td>@user.Rep</td>
+                    <td>@user.Item</td>
+                    <td>@user.Unit</td>
+                </tr>
+            }
+        </table>
+    }
+</body>
+</html>
+
+
+-----------------------------------------model.cs--------------------------------
+namespace WebApplication9.Models
+{
+    public class model
+    {
+        public string Id { get; set; }
+        public string Region { get; set; }
+
+        public string Rep { get; set; }
+
+        public string Item { get; set; }
+
+        public string Unit { get; set; }
+    }
+}
+
+-----------------------------------------modelcontroller.cs--------------------------------
+using ExcelDataReader;
+using Microsoft.AspNetCore.Mvc;
+using WebApplication9.Models;
+
+namespace WebApplication9.Controllers
+{
+    public class modelController : Controller
+    {
+       
+        [HttpGet]
+        public IActionResult Index()
+        {
+            return View(new List<model>());
+        }
+        [HttpPost]
+        public IActionResult Index(IFormCollection form)
+        {
+            List<model> users = new List<model>();
+            var fileName = "./new.xlsx";
+            
+            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+            using (var stream = System.IO.File.Open(fileName, FileMode.Open, FileAccess.Read))
+            {
+                using (var reader = ExcelReaderFactory.CreateReader(stream))
+                {
+
+                    while (reader.Read()) 
+                    {
+                        users.Add(new model
+                        {
+                            Id =reader.GetValue(0).ToString(),
+                            Region = reader.GetValue(1).ToString(),
+                            Rep = reader.GetValue(2).ToString(),
+                            Item = reader.GetValue(3).ToString(),
+                            Unit =reader.GetValue(4).ToString()
+                        }) ;
+                    }
+                }
+            }
+            return View(users);
+        }
+    }
+}
+
